@@ -6,6 +6,8 @@ import vk
 
 class OAuthWindow(QWidget):
     success_login = pyqtSignal()
+
+    
     def __init__(self, VKAPI):
         super(OAuthWindow, self).__init__()
         self.VKAPI = VKAPI
