@@ -1,5 +1,7 @@
 from PyQt5.QtCore import QObject
 from vk import *
+from vk.exceptions import VkAuthError, VkAPIError
+from vk.mixins import *
 
 class VKAPI(QObject):
 
@@ -9,7 +11,7 @@ class VKAPI(QObject):
         self.session = None
         self.API = None
 
-    def login(self, username, password):
-        self.session = AuthSession(app_id = self.app_id, user_login = username, user_password = password)
-        print(self.session.access_token)
-        print(self.session)
+    def login(self, access_token):
+
+        self.session = Session(access_token)
+        self.API = API(self.session)

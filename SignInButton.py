@@ -11,7 +11,6 @@ class SignInButton(QLabel):
     def __init__(self, message):
         super(SignInButton, self).__init__()
         self.setText(message)
-        #self.setFixedSize(70, 30)
         self.setAlignment(Qt.AlignCenter)
         self.setFont(QFont("Arial", 15))
         self.setStyleSheet("background-color: rgb(153, 169, 255); border-radius: 3px; margin-left: 14px; margin-right: 14px;")
