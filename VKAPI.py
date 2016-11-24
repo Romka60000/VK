@@ -7,11 +7,18 @@ class VKAPI(QObject):
 
     def __init__(self, app_id):
         super(VKAPI, self).__init__()
-        self.app_id = app_id
-        self.session = None
-        self.API = None
+        self.__app_id = app_id
+        self.__session = None
+        self.__API = None
 
     def login(self, access_token):
+        self.__session = Session(access_token)
+        self.__API = API(self.__session)
 
-        self.session = Session(access_token)
-        self.API = API(self.session)
+    @property
+    def app_id(self):
+        return self.__app_id
+
+    @property
+    def API(self):
+        return self.__API
