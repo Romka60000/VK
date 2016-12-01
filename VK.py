@@ -10,8 +10,8 @@ def main():
     vkapi = VKAPI(app_id)
     oauth = OAuthWindow(vkapi)
 
-    mainWindow = MainWindow()
-    oauth.success_login.connect(mainWindow.show)
+    mainWindow = MainWindow(vkapi)
+    oauth.loginSuccess.connect(mainWindow.loginSuccess)
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
