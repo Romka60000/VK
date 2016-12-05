@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QTextEdit, QListWidgetItem
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 import vk
 from Button import Button
 from VKAPI import VKAPI
@@ -11,32 +11,52 @@ class MainWindow(QWidget):
         self.setMinimumSize(900, 580)
         self.setWindowTitle("VK Standalone")
         self.setWindowIcon(QIcon("pics/TitleIcon.png"))
-        self.setStyleSheet("background-color: white;")
+        self.setStyleSheet("background-color: rgb(210,210,255);")
         self.__vkapi = VKAPI
 
-        # self.__btnProfile = Button("Profile", "pics/Profile.png")
-        # self.__btnFriends = Button("Friends", "pics/Friends.png")
-        # self.__btnMessages = Button("Messages", "pics/Message.png")
-        # self.__btnNews = Button("News", "pics/News.png")
-        # self.__btnPhotos = Button("Photos", "pics/Photos.png")
-        # self.__btnMusic = Button("Music", "pics/Music.png")
-        # self.__btnVideos = Button("Videos", "pics/Video.png")
-        # self.__btnCommunities = Button("Communities", "pics/Communities.png")
-        #
-        # self.__vbox = QVBoxLayout()
-        # self.__vbox.setAlignment(Qt.AlignTop)
-        # self.__vbox.addWidget(self.__btnProfile)
-        # self.__vbox.addWidget(self.__btnFriends)
-        # self.__vbox.addWidget(self.__btnMessages)
-        # self.__vbox.addWidget(self.__btnNews)
-        # self.__vbox.addWidget(self.__btnCommunities)
-        # self.__vbox.addWidget(self.__btnPhotos)
-        # self.__vbox.addWidget(self.__btnMusic)
-        # self.__vbox.addWidget(self.__btnVideos)
-        #
-        # self.setLayout(self.__vbox)
+        self.__dialog_list_widget = QListWidget()
+        self.__dialog_list_widget.setStyleSheet("background-color: white;")
+        self.__dialog_list_widget.verticalScrollBar().setStyleSheet("QScrollBar::handle:vertical {" +
+                                                                    "background: rgb(210,210,255); }" +
+                                                                    "QScrollBar:vertical { background: white; }")
+        self.__dialog_list_widget.setFixedWidth(300)
+
+        self.__messages_list_widget = QListWidget()
+        self.__messages_list_widget.setStyleSheet("background-color: white")
+
+        self.__send_message_btn = Button("Send")
+        self.__send_message_btn.setFixedSize(80,50)
+
+        self.__edit_new_message = QTextEdit()
+        self.__edit_new_message.setStyleSheet("background-color: white")
+        self.__edit_new_message.setFixedHeight(50)
+
+        self.__hbox1 = QHBoxLayout()
+        self.__hbox1.addWidget(self.__edit_new_message)
+        self.__hbox1.addWidget(self.__send_message_btn)
+
+        self.__vbox1 = QVBoxLayout()
+        self.__vbox1.addWidget(self.__dialog_list_widget)
+
+        self.__vbox2 = QVBoxLayout()
+        self.__vbox2.setAlignment(Qt.AlignBottom)
+        self.__vbox2.setSpacing(10)
+        self.__vbox2.addWidget((self.__messages_list_widget))
+        self.__vbox2.addItem(self.__hbox1)
+
+        self.__hbox = QHBoxLayout()
+        self.__hbox.addItem(self.__vbox1)
+        self.__hbox.addItem(self.__vbox2)
+
+        self.setLayout(self.__hbox)
 
     def loginSuccess(self):
         self.show()
-        #self.__vkapi.getMessagesList()
-        self.__vkapi.getMessagesHistory()
+
+        for i in self.__vkapi.getMessagesList():
+            item = QListWidgetItem()
+            self.__dialog_list_widget.addItem(item)
+            self.__dialog_list_widget.setItemWidget(item, i)
+
+        for i in range(self.__dialog_list_widget.count()):
+            self.__dialog_list_widget.item(i).setSizeHint(QSize(20, 50))
