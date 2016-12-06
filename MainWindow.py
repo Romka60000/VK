@@ -6,6 +6,7 @@ from Button import Button
 from VKAPI import VKAPI
 
 class MainWindow(QWidget):
+
     def __init__(self, VKAPI):
         super(MainWindow, self).__init__()
         self.setMinimumSize(900, 580)
