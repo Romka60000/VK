@@ -18,7 +18,7 @@ class OAuthWindow(QObject):
         self.__web_view.show()
         self.__web_view.setUrl(QUrl('https://oauth.vk.com/authorize?client_id=' + VKAPI.app_id +
                                     '&display=mobile&redirect_uri=http:' +
-                               '//vk.com&scope=offline, messages&response_type=code&v=5.60'))
+                               '//vk.com&scope=offline, messages, groups&response_type=code&v=5.60'))
         self.__VKAPI = VKAPI
         self.__web_view.loadFinished.connect(self.loaded)
 
