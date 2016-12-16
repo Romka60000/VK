@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QTextEdit, QListWidgetItem
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-import emoji
-# import vk
+from EditMessage import EditMessage
+from time import sleep
+from threading import Thread
 from Button import Button
-# from VKAPI import VKAPI
 
 class MainWindow(QWidget):
 
@@ -50,11 +50,8 @@ class MainWindow(QWidget):
         self.__send_message_btn.setFixedSize(80,50)
         self.__send_message_btn.mouseClick.connect(self.sendMessage)
 
-        self.__edit_new_message = QTextEdit()
-        self.__edit_new_message.setStyleSheet("background-color: white")
-        self.__edit_new_message.setFixedHeight(50)
-        self.__edit_new_message.setFont(QFont('Sans-serif', 11))
-
+        self.__edit_new_message = EditMessage()
+        self.__edit_new_message.enterPressed.connect(self.sendMessage)
 
         self.__hbox1 = QHBoxLayout()
         self.__hbox1.addWidget(self.__edit_new_message)
@@ -86,23 +83,36 @@ class MainWindow(QWidget):
             item.setSizeHint(QSize(20, 60))
             self.__dialog_list_widget.addItem(item)
             self.__dialog_list_widget.setItemWidget(item, i)
+        # self.__dialog_list_widget.setCurrentItem(item)
+        # Thread(target=self.timer).start()
 
     def clickedDialog(self):
-        sender = self.sender()
+
         if self.__old_dlg is not None:
             self.__old_dlg.setStyleSheet("* { color: black; background-color: white; padding-left: 10px; }" +
                                 "*:hover { background-color: rgb(220,220,250);} * { padding-left: 10px }")
 
-        sender.itemWidget(sender.currentItem()).setStyleSheet("color: white; background-color: rgb(150,150,255);" +
-                                                              "padding-left: 10px")
-        self.__old_dlg = sender.itemWidget(sender.currentItem())
+        self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).setStyleSheet(
+            "color: white; background-color: rgb(150,150,255);" + "padding-left: 10px")
+        self.__old_dlg = self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem())
         self.__messages_list_widget.clear()
+        self.getMessagesFromDialog()
 
-        for i in list(reversed(self.__vkapi.getMessagesList(sender.itemWidget(sender.currentItem()).peer_id))):
+    def getMessagesFromDialog(self):
+        for i in list(reversed(self.__vkapi.getMessagesList(
+                self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id))):
             item = QListWidgetItem()
             self.__messages_list_widget.addItem(item)
             item.setSizeHint(i.sizeHint())
             self.__messages_list_widget.setItemWidget(item, i)
+
+        self.__messages_list_widget.scrollToBottom()
+
+    def timer(self):
+        while True:
+            if self.__dialog_list_widget.currentItem is not None:
+                self.getMessagesFromDialog()
+                sleep(1.5)
 
     def sendMessage(self):
         try:
@@ -112,3 +122,4 @@ class MainWindow(QWidget):
 
         finally:
             pass
+

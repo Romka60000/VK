@@ -14,6 +14,7 @@ class VKAPI(QObject):
         self.__session = None
         self.__API = None
         self.__users = {}
+        self.__groups = {}
 
     def login(self, access_token):
         self.__session = Session(access_token)
@@ -39,15 +40,16 @@ class VKAPI(QObject):
             if m["out"]:
                 m["body"] = "<i>Вы: </i>" + m["body"]
             if m.get('chat_id') is not None:
+                users = self.__API.users.get(v='5.60', user_ids=m.get('chat_active'))
+                self.__users.update({i['id']: i for i in users})
+
                 msg.setText('<b>' + m["title"] + ': ' + self.getUser(m["user_id"])['first_name'] + ' ' +
                             self.getUser(m["user_id"])['last_name'] + "</b>" + '<br>' + m['body'])
                 msg.peer_id = (2000000000 + m['chat_id'])
 
             elif i['message']['user_id'] < 0:
-                self.__API.groups.getById(v='5.60', group_id=str(-1 * i['message']['user_id']))
-                msg.setText('<b>' +
-                            self.__API.groups.getById(v='5.60', group_id=str(-1 * i['message']['user_id']))[0]['name']
-                            + '</b>' + '<br>' + i['message']['body'])
+                msg.setText('<b>' + self.getGroup(abs(i['message']['user_id']))['name'] + '</b>' + '<br>'
+                            + i['message']['body'])
                 msg.peer_id = i['message']['user_id']
 
             else:
@@ -64,8 +66,12 @@ class VKAPI(QObject):
         msgs = []
         for i in (self.__API.messages.getHistory(v='5.60', peer_id=peer_id, count=50)['items']):
             msg = Message()
-            msg.setText('<b>' + self.getUser(i['from_id'])['first_name'] + ' ' +
-                        self.getUser(i['from_id'])['last_name'] + '</b><br>' + i['body'] + '<br>')
+            if i['from_id'] > 0:
+                msg.setText('<b>' + self.getUser(i['from_id'])['first_name'] + ' ' +
+                            self.getUser(i['from_id'])['last_name'] + '</b><br>' + i['body'] + '<br>')
+
+            else:
+                msg.setText('<b>' + self.getGroup(abs(i['from_id']))['name'] + '</b><br>' + i['body'] + '<br>')
 
             msgs.append(msg)
         return msgs
@@ -94,4 +100,16 @@ class VKAPI(QObject):
             self.__users.update({i["id"]: i for i in users})
         if len(ids) == 1:
             return self.__users[ids[0]]
-        return {k: v for k, v in self.__users if k in ids}
+        return {k: v for k, v in self.__users if k in ids }
+
+    def getGroup(self, *ids):
+        l = []
+        for i in ids:
+            if i not in self.__groups.keys():
+                l.append(i)
+        if len(l) != 0:
+            groups = self.__API.groups.getById(v="5.60", group_ids=l)
+            self.__groups.update({i["id"]: i for i in groups})
+        if len(ids) == 1:
+            return self.__groups[ids[0]]
+        return {k: v for k, v in self.__groups if k in ids }
