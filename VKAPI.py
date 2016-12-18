@@ -1,10 +1,8 @@
 from PyQt5.QtCore import QObject, QUrl
-from PyQt5.QtWidgets import QLabel
 from Dialog import Dialog
 from Message import Message
 import time
 from vk import *
-
 
 class VKAPI(QObject):
 
@@ -22,7 +20,7 @@ class VKAPI(QObject):
 
     def getDialogsList(self):
         dialogList = self.__API.messages.getDialogs(v='5.60',count='20')
-        msgs_list = []
+        dlg_list = []
         ids = []
 
         for i in dialogList['items']:
@@ -33,43 +31,50 @@ class VKAPI(QObject):
         self.__users.update({i["uid"]: i for i in users})
 
         for i in dialogList['items']:
-            msg = Dialog()
+            dlg = Dialog()
             m = i["message"]
             if m.get("attachments") is not None:
-                m["body"] += ("" if m["body"] == "" else"<br>") + m["attachments"][0]["type"]
+                m["body"] += ("" if m["body"] == "" else "<br>") + m["attachments"][0]["type"]
+            if m.get("fwd_messages") is not None:
+                m["body"] += ("" if m["body"] == "" else "<br>") + 'Forwarded messages'
             if m["out"]:
                 m["body"] = "<i>Вы: </i>" + m["body"]
             if m.get('chat_id') is not None:
-                users = self.__API.users.get(v='5.60', user_ids=m.get('chat_active'))
-                self.__users.update({i['id']: i for i in users})
+                ids.append(m.get('chat_active'))
 
-                msg.setText('<b>' + m["title"] + ': ' + self.getUser(m["user_id"])['first_name'] + ' ' +
+                dlg.setText('<b>' + m["title"] + ': ' + self.getUser(m["user_id"])['first_name'] + ' ' +
                             self.getUser(m["user_id"])['last_name'] + "</b>" + '<br>' + m['body'])
-                msg.peer_id = (2000000000 + m['chat_id'])
+                dlg.peer_id = (2000000000 + m['chat_id'])
 
             elif i['message']['user_id'] < 0:
-                msg.setText('<b>' + self.getGroup(abs(i['message']['user_id']))['name'] + '</b>' + '<br>'
+                dlg.setText('<b>' + self.getGroup(abs(i['message']['user_id']))['name'] + '</b>' + '<br>'
                             + i['message']['body'])
-                msg.peer_id = i['message']['user_id']
+                dlg.peer_id = i['message']['user_id']
 
             else:
-                msg.setText('<b>' + self.getUser(m["user_id"])['first_name'] + ' ' +
+                dlg.setText('<b>' + self.getUser(m["user_id"])['first_name'] + ' ' +
                             self.getUser(m["user_id"])['last_name'] + '</b>' +
                             '<br>' + i['message']['body'])
-                msg.peer_id = m['user_id']
+                dlg.peer_id = m['user_id']
 
-            msgs_list.append(msg)
-
-        return msgs_list
+            dlg_list.append(dlg)
+        self.__users.update({i["uid"]: i for i in users})
+        return dlg_list
 
     def getMessagesList(self, peer_id):
         msgs = []
-        for i in (self.__API.messages.getHistory(v='5.60', peer_id=peer_id, count=50)['items']):
+        history = self.__API.messages.getHistory(v='5.60', peer_id=peer_id, count=50)
+        for i in (history['items']):
+            if i.get('attachments') is not None:
+                self.getAttachments(i)
+
+            if i.get('fwd_messages'):
+                i['body'] += '<br><i>Forwarded messages:</i><br>' + self.getMessage(i['fwd_messages'])
+
             msg = Message()
             if i['from_id'] > 0:
-                msg.setText('<b>' + self.getUser(i['from_id'])['first_name'] + ' ' +
+                msg.setText('<br><b>' + self.getUser(i['from_id'])['first_name'] + ' ' +
                             self.getUser(i['from_id'])['last_name'] + '</b><br>' + i['body'] + '<br>')
-
             else:
                 msg.setText('<b>' + self.getGroup(abs(i['from_id']))['name'] + '</b><br>' + i['body'] + '<br>')
 
@@ -113,3 +118,47 @@ class VKAPI(QObject):
         if len(ids) == 1:
             return self.__groups[ids[0]]
         return {k: v for k, v in self.__groups if k in ids }
+
+    def getAttachments(self, msg):
+        if msg['body'] != '':
+            msg['body'] += '<br>'
+        for k in msg.get('attachments'):
+            if k['type'] == 'photo':
+                msg['body'] += '<a href=' + self.getPhoto(k) + '>Photo</a><br>'
+            elif k['type'] == 'doc':
+                msg['body'] += '<a href=' + k['doc']['url'] + '>Document: ' + k['doc']['title'] + '</a><br>'
+            else:
+                msg['body'] += '' + str(k['type']).capitalize() + '<br>'
+
+    def getMessage(self, msgs):
+        body = '-------------------------------------------------------<br>'
+        for i in msgs:
+            if i.get('attachments') is not None:
+                self.getAttachments(i)
+
+            if i['user_id'] > 0:
+                body += ('<br><b>' + self.getUser(i['user_id'])['first_name'] + ' ' +
+                            self.getUser(i['user_id'])['last_name'] + '</b><br>' + i['body'] + '<br>')
+            else:
+                body += ('<b>' + self.getGroup(abs(i['user_id']))['name'] + '</b><br>' + i['body'] + '<br>')
+            if i.get('fwd_messages') is not None:
+                body += self.getMessage(i.get('fwd_messages'))
+        body += '-------------------------------------------------------'
+        return body
+
+    def getPhoto(self, msg):
+        photo = msg.get('photo')
+        if photo.get('photo_1280') is not None:
+            return photo['photo_1280']
+        else:
+            if photo.get('photo_807') is not None:
+                return photo['photo_807']
+            else:
+                if photo.get('photo_604') is not None:
+                    return photo['photo_604']
+                else:
+                    if photo.get('photo_130') is not None:
+                        return photo['photo_130']
+                    else:
+                        if photo.get('photo_75') is not None:
+                            return photo['photo_75']

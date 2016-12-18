@@ -83,8 +83,6 @@ class MainWindow(QWidget):
             item.setSizeHint(QSize(20, 60))
             self.__dialog_list_widget.addItem(item)
             self.__dialog_list_widget.setItemWidget(item, i)
-        # self.__dialog_list_widget.setCurrentItem(item)
-        # Thread(target=self.timer).start()
 
     def clickedDialog(self):
 
@@ -96,7 +94,12 @@ class MainWindow(QWidget):
             "color: white; background-color: rgb(150,150,255);" + "padding-left: 10px")
         self.__old_dlg = self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem())
         self.__messages_list_widget.clear()
-        self.getMessagesFromDialog()
+        try:
+            self.getMessagesFromDialog()
+        except:
+            sleep(1.5)
+            self.getMessagesFromDialog()
+        self.__messages_list_widget.scrollToBottom()
 
     def getMessagesFromDialog(self):
         for i in list(reversed(self.__vkapi.getMessagesList(
@@ -105,8 +108,6 @@ class MainWindow(QWidget):
             self.__messages_list_widget.addItem(item)
             item.setSizeHint(i.sizeHint())
             self.__messages_list_widget.setItemWidget(item, i)
-
-        self.__messages_list_widget.scrollToBottom()
 
     def timer(self):
         while True:
@@ -119,7 +120,6 @@ class MainWindow(QWidget):
             self.__vkapi.sendMessage(self.__dialog_list_widget.itemWidget(
                 self.__dialog_list_widget.currentItem()).peer_id, self.__edit_new_message.toPlainText())
             self.__edit_new_message.clear()
-
         finally:
             pass
 

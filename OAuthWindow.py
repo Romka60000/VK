@@ -1,10 +1,8 @@
 from PyQt5.QtCore import Qt, pyqtSignal, QUrl, QObject, QFile
 from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtGui import QIcon
-import vk
 import pickle
 import json
-from vk.exceptions import VkAuthError, VkAPIError
 
 class OAuthWindow(QObject):
     loginSuccess = pyqtSignal()
