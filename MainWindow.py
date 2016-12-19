@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidg
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5.QtCore import Qt, QSize
 from EditMessage import EditMessage
+from MessageLabel import MessageLabel
 from time import sleep
 from threading import Thread
 from Button import Button
@@ -17,6 +18,8 @@ class MainWindow(QWidget):
         self.setStyleSheet("background-color: rgb(210,210,255);")
         self.__vkapi = VKAPI
         self.__old_dlg = None
+
+        # self.__dialogsList = []
 
         self.__dialogs_label = QLabel()
         self.__dialogs_label.setFont(QFont('Calibri', 14))
@@ -98,16 +101,20 @@ class MainWindow(QWidget):
     def getDialogs(self):
         self.__dialog_list_widget.clear()
         for i in self.__vkapi.getDialogsList():
+            shortLabel = MessageLabel(i.getShortText(), False, i.getPeerId())
             item = QListWidgetItem()
             item.setSizeHint(QSize(20, 60))
             self.__dialog_list_widget.addItem(item)
-            self.__dialog_list_widget.setItemWidget(item, i)
+            self.__dialog_list_widget.setItemWidget(item, shortLabel)
 
     def getMessagesFromDialog(self):
-        lst =[]
-        for i in self.__vkapi.getMessagesList(123091335):
-            lst.append(i.getFullText())
-        self.__messages_list_widget.addItems(lst)
+        idx = self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id
+        for i in self.__vkapi.getMessagesList(idx):
+            fullLabel = MessageLabel(i.getFullText(), True, i.peer_id)
+            item = QListWidgetItem()
+            self.__messages_list_widget.addItem(item)
+            item.setSizeHint(fullLabel.sizeHint())
+            self.__messages_list_widget.setItemWidget(item, fullLabel)
 
         # for i in list(reversed(self.__vkapi.getMessagesList(
         #         self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id))):

@@ -13,10 +13,11 @@ class Message:
         return self.user_id
 
     def getTitle(self, chat_title):
-        if self.user_id < 0:
-            sender = self.__api.getGroup(-self.user_id)["name"]
+        idx = self.from_id if self.from_id is not None else self.user_id
+        if idx < 0:
+            sender = self.__api.getGroup(-idx)["name"]
         else:
-            user = self.__api.getUser(self.user_id)
+            user = self.__api.getUser(idx)
             sender = user["first_name"] + " " + user["last_name"]
         s = "<b>" + (self.title + ": " if self.chat_id is not None and chat_title else "") + sender + "</b><br>"
         body = self.body
@@ -42,7 +43,7 @@ class Message:
                 elif i['type'] == 'doc':
                     s += '<a href= ' + i['doc']['url'] + 'Document: ' + i['doc']['title'] + '</a><br>'
                 else:
-                    s += i['type'].capitalize()
+                    s += i['type'].capitalize() + '<br>'
         if self.fwd_messages is not None:
             s += "<i>Forwarded messages:</i><br>"
             s += self.__api.getMessage(self.fwd_messages)

@@ -36,7 +36,8 @@ class VKAPI(QObject):
         self.__users.update({i["uid"]: i for i in users})
         for i in dialogList['items']:
             msg = Message(i["message"], self)
-            dlg_list.append(MessageLabel(msg.getShortText(), False))
+            # dlg_list.append(MessageLabel(msg.getShortText(), False))
+            dlg_list.append(msg)
             self.__msgs.addMessages(msg)
         return dlg_list
 
