@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QTextEdit, QListWidgetItem
-from PyQt5.QtGui import QIcon, QPixmap, QFont
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem
+from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtCore import Qt, QSize
 from EditMessage import EditMessage
 from time import sleep
 from threading import Thread
@@ -74,18 +74,14 @@ class MainWindow(QWidget):
         self.__hbox.addItem(self.__vbox2)
 
         self.setLayout(self.__hbox)
+        self.hide()
 
     def loginSuccess(self):
+
+        self.getDialogs()
         self.show()
 
-        for i in self.__vkapi.getDialogsList():
-            item = QListWidgetItem()
-            item.setSizeHint(QSize(20, 60))
-            self.__dialog_list_widget.addItem(item)
-            self.__dialog_list_widget.setItemWidget(item, i)
-
     def clickedDialog(self):
-
         if self.__old_dlg is not None:
             self.__old_dlg.setStyleSheet("* { color: black; background-color: white; padding-left: 10px; }" +
                                 "*:hover { background-color: rgb(220,220,250);} * { padding-left: 10px }")
@@ -101,7 +97,16 @@ class MainWindow(QWidget):
             self.getMessagesFromDialog()
         self.__messages_list_widget.scrollToBottom()
 
+    def getDialogs(self):
+        self.__dialog_list_widget.clear()
+        for i in self.__vkapi.getDialogsList():
+            item = QListWidgetItem()
+            item.setSizeHint(QSize(20, 60))
+            self.__dialog_list_widget.addItem(item)
+            self.__dialog_list_widget.setItemWidget(item, i)
+
     def getMessagesFromDialog(self):
+        self.__messages_list_widget.clear()
         for i in list(reversed(self.__vkapi.getMessagesList(
                 self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id))):
             item = QListWidgetItem()
@@ -120,6 +125,6 @@ class MainWindow(QWidget):
             self.__vkapi.sendMessage(self.__dialog_list_widget.itemWidget(
                 self.__dialog_list_widget.currentItem()).peer_id, self.__edit_new_message.toPlainText())
             self.__edit_new_message.clear()
+            self.__messages_list_widget.scrollToBottom()
         finally:
             pass
-
