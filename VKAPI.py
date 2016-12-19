@@ -31,14 +31,12 @@ class VKAPI(QObject):
             if msg["user_id"] > 0:
                 ids.append(msg["user_id"])
             if msg.get("chat_id") is not None:
-                print(msg['chat_active'])
                 ids.extend(msg["chat_active"])
-        print(ids)
         users = self.__API.users.get(user_ids=ids)
         self.__users.update({i["uid"]: i for i in users})
         for i in dialogList['items']:
             msg = Message(i["message"], self)
-            dlg_list.append(MessageLabel(msg.getShortText()))
+            dlg_list.append(MessageLabel(msg.getShortText(), False))
             self.__msgs.addMessages(msg)
         return dlg_list
 
@@ -74,24 +72,33 @@ class VKAPI(QObject):
         # return dlg_list
 
     def getMessagesList(self, peer_id):
-        msgs = []
-        history = self.__API.messages.getHistory(v='5.60', peer_id=peer_id, count=50)
-        for i in (history['items']):
-            if i.get('attachments') is not None:
-                self.getAttachments(i)
+        messages_list = self.__API.messages.getHistory(v='5.60', peer_id=peer_id, count=10)
+        for i in messages_list['items']:
+            if i not in self.__msgs.getDialog(peer_id):
+                self.__msgs.addMessages(Message(i, self))
+        return self.__msgs.getDialog(peer_id)
 
-            if i.get('fwd_messages'):
-                i['body'] += '<br><i>Forwarded messages:</i><br>' + self.getMessage(i['fwd_messages'])
 
-            msg = MessageLabel("")
-            if i['from_id'] > 0:
-                msg.setText('<br><b>' + self.getUser(i['from_id'])['first_name'] + ' ' +
-                            self.getUser(i['from_id'])['last_name'] + '</b><br>' + i['body'] + '<br>')
-            else:
-                msg.setText('<b>' + self.getGroup(abs(i['from_id']))['name'] + '</b><br>' + i['body'] + '<br>')
 
-            msgs.append(msg)
-        return msgs
+
+        # msgs = []
+        # history = self.__API.messages.getHistory(v='5.60', peer_id=peer_id, count=50)
+        # for i in (history['items']):
+        #     if i.get('attachments') is not None:
+        #         self.getAttachments(i)
+        #
+        #     if i.get('fwd_messages'):
+        #         i['body'] += '<br><i>Forwarded messages:</i><br>' + self.getMessage(i['fwd_messages'])
+        #
+        #     msg = MessageLabel("")
+        #     if i['from_id'] > 0:
+        #         msg.setText('<br><b>' + self.getUser(i['from_id'])['first_name'] + ' ' +
+        #                     self.getUser(i['from_id'])['last_name'] + '</b><br>' + i['body'] + '<br>')
+        #     else:
+        #         msg.setText('<b>' + self.getGroup(abs(i['from_id']))['name'] + '</b><br>' + i['body'] + '<br>')
+        #
+        #     msgs.append(msg)
+        # return msgs
 
     def sendMessage(self, peer_id, message):
         try:

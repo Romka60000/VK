@@ -1,5 +1,7 @@
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QFont
+
+
 class Dialog(QLabel):
 
     def __init__(self):

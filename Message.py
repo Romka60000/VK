@@ -44,5 +44,6 @@ class Message:
                 else:
                     s += i['type'].capitalize()
         if self.fwd_messages is not None:
+            s += "<i>Forwarded messages:</i><br>"
             s += self.__api.getMessage(self.fwd_messages)
         return s

@@ -6,6 +6,7 @@ from time import sleep
 from threading import Thread
 from Button import Button
 
+
 class MainWindow(QWidget):
 
     def __init__(self, VKAPI):
@@ -34,7 +35,7 @@ class MainWindow(QWidget):
                                                                     "QScrollBar:vertical { background: white; }")
 
         self.__dialog_list_widget.setFixedWidth(300)
-        self.__dialog_list_widget.itemPressed.connect(self.clickedDialog)
+        self.__dialog_list_widget.itemPressed.connect(self.dialogPressed)
 
         self.__messages_list_widget = QListWidget()
         self.__messages_list_widget.setStyleSheet("background-color: white;")
@@ -81,13 +82,10 @@ class MainWindow(QWidget):
         self.getDialogs()
         self.show()
 
-    def clickedDialog(self):
+    def dialogPressed(self):
         if self.__old_dlg is not None:
-            self.__old_dlg.setStyleSheet("* { color: black; background-color: white; padding-left: 10px; }" +
-                                "*:hover { background-color: rgb(220,220,250);} * { padding-left: 10px }")
-
-        self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).setStyleSheet(
-            "color: white; background-color: rgb(150,150,255);" + "padding-left: 10px")
+            self.__old_dlg.setStyleFree()
+        self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).setStylePressed()
         self.__old_dlg = self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem())
         self.__messages_list_widget.clear()
         try:
@@ -106,13 +104,17 @@ class MainWindow(QWidget):
             self.__dialog_list_widget.setItemWidget(item, i)
 
     def getMessagesFromDialog(self):
-        self.__messages_list_widget.clear()
-        for i in list(reversed(self.__vkapi.getMessagesList(
-                self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id))):
-            item = QListWidgetItem()
-            self.__messages_list_widget.addItem(item)
-            item.setSizeHint(i.sizeHint())
-            self.__messages_list_widget.setItemWidget(item, i)
+        lst =[]
+        for i in self.__vkapi.getMessagesList(123091335):
+            lst.append(i.getFullText())
+        self.__messages_list_widget.addItems(lst)
+
+        # for i in list(reversed(self.__vkapi.getMessagesList(
+        #         self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id))):
+        #     item = QListWidgetItem()
+        #     self.__messages_list_widget.addItem(item)
+        #     item.setSizeHint(i.sizeHint())
+        #     self.__messages_list_widget.setItemWidget(item, i)
 
     def timer(self):
         while True:
