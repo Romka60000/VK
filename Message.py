@@ -1,4 +1,6 @@
-class Message:
+from PyQt5.QtCore import QObject
+
+class Message(QObject):
     def __init__(self, dct, api):
         self.__msg = dct
         self.__api = api

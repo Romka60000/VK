@@ -15,6 +15,7 @@ class Button(QLabel):
 
     def enterEvent(self, *args, **kwargs):
         self.setStyleSheet("background-color: rgb(220,220,220); border-radius: 3px; border: 1px solid black;")
+        self.setCursor(QCursor(Qt.PointingHandCursor))
 
     def leaveEvent(self, *args, **kwargs):
         self.setStyleSheet("background-color: white; border-radius: 3px; border: 1px solid black;")

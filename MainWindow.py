@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt, QSize
 from EditMessage import EditMessage
 from MessageLabel import MessageLabel
 from time import sleep
-from threading import Thread
 from Button import Button
 
 
@@ -19,8 +18,6 @@ class MainWindow(QWidget):
         self.__vkapi = VKAPI
         self.__old_dlg = None
 
-        # self.__dialogsList = []
-
         self.__dialogs_label = QLabel()
         self.__dialogs_label.setFont(QFont('Calibri', 14))
         self.__dialogs_label.setText('Dialogs')
@@ -30,6 +27,9 @@ class MainWindow(QWidget):
         self.__messages_label.setFont(QFont('Calibri', 14))
         self.__messages_label.setText('Messages')
         self.__messages_label.setStyleSheet('color: white')
+
+        self.__btn_refresh = Button("Refresh")
+        self.__btn_refresh.mouseClick.connect(self.getDialogs)
 
         self.__dialog_list_widget = QListWidget()
         self.__dialog_list_widget.setStyleSheet("* { background-color: white; }")
@@ -65,6 +65,7 @@ class MainWindow(QWidget):
         self.__vbox1.setSpacing(5)
         self.__vbox1.addWidget(self.__dialogs_label)
         self.__vbox1.addWidget(self.__dialog_list_widget)
+        self.__vbox1.addWidget(self.__btn_refresh)
 
         self.__vbox2 = QVBoxLayout()
         self.__vbox2.setAlignment(Qt.AlignBottom)
@@ -81,7 +82,6 @@ class MainWindow(QWidget):
         self.hide()
 
     def loginSuccess(self):
-
         self.getDialogs()
         self.show()
 
@@ -100,6 +100,8 @@ class MainWindow(QWidget):
 
     def getDialogs(self):
         self.__dialog_list_widget.clear()
+        self.__messages_list_widget.clear()
+        self.__old_dlg = None
         for i in self.__vkapi.getDialogsList():
             shortLabel = MessageLabel(i.getShortText(), False, i.getPeerId())
             item = QListWidgetItem()
@@ -116,24 +118,12 @@ class MainWindow(QWidget):
             item.setSizeHint(fullLabel.sizeHint())
             self.__messages_list_widget.setItemWidget(item, fullLabel)
 
-        # for i in list(reversed(self.__vkapi.getMessagesList(
-        #         self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id))):
-        #     item = QListWidgetItem()
-        #     self.__messages_list_widget.addItem(item)
-        #     item.setSizeHint(i.sizeHint())
-        #     self.__messages_list_widget.setItemWidget(item, i)
-
-    def timer(self):
-        while True:
-            if self.__dialog_list_widget.currentItem is not None:
-                self.getMessagesFromDialog()
-                sleep(1.5)
-
     def sendMessage(self):
         try:
             self.__vkapi.sendMessage(self.__dialog_list_widget.itemWidget(
                 self.__dialog_list_widget.currentItem()).peer_id, self.__edit_new_message.toPlainText())
             self.__edit_new_message.clear()
+            self.getMessagesFromDialog()
             self.__messages_list_widget.scrollToBottom()
         finally:
             pass

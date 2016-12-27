@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt
 
 
@@ -16,6 +16,9 @@ class MessageLabel(QLabel):
             self.setTextInteractionFlags(Qt.TextBrowserInteraction)
             self.setWordWrap(True)
             self.setOpenExternalLinks(True)
+
+    def enterEvent(self, *args, **kwargs):
+        self.setCursor(QCursor(Qt.PointingHandCursor))
 
     def setStylePressed(self):
         self.setStyleSheet("color: white; background-color: rgb(150,150,255);" + "padding-left: 10px")

@@ -1,7 +1,7 @@
 from Message import Message
+from PyQt5.QtCore import QObject
 
-
-class MessageContainer:
+class MessageContainer(QObject):
     def __init__(self):
         self.__msgs = {}
 
