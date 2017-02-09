@@ -1,42 +1,129 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt
-import vk
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QListWidgetItem
+from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtCore import Qt, QSize
+from EditMessage import EditMessage
+from MessageLabel import MessageLabel
+from time import sleep
 from Button import Button
-from VKAPI import VKAPI
+
 
 class MainWindow(QWidget):
+
     def __init__(self, VKAPI):
         super(MainWindow, self).__init__()
         self.setMinimumSize(900, 580)
         self.setWindowTitle("VK Standalone")
         self.setWindowIcon(QIcon("pics/TitleIcon.png"))
-        self.setStyleSheet("background-color: white;")
+        self.setStyleSheet("background-color: rgb(210,210,255);")
         self.__vkapi = VKAPI
+        self.__old_dlg = None
 
-        # self.__btnProfile = Button("Profile", "pics/Profile.png")
-        # self.__btnFriends = Button("Friends", "pics/Friends.png")
-        # self.__btnMessages = Button("Messages", "pics/Message.png")
-        # self.__btnNews = Button("News", "pics/News.png")
-        # self.__btnPhotos = Button("Photos", "pics/Photos.png")
-        # self.__btnMusic = Button("Music", "pics/Music.png")
-        # self.__btnVideos = Button("Videos", "pics/Video.png")
-        # self.__btnCommunities = Button("Communities", "pics/Communities.png")
-        #
-        # self.__vbox = QVBoxLayout()
-        # self.__vbox.setAlignment(Qt.AlignTop)
-        # self.__vbox.addWidget(self.__btnProfile)
-        # self.__vbox.addWidget(self.__btnFriends)
-        # self.__vbox.addWidget(self.__btnMessages)
-        # self.__vbox.addWidget(self.__btnNews)
-        # self.__vbox.addWidget(self.__btnCommunities)
-        # self.__vbox.addWidget(self.__btnPhotos)
-        # self.__vbox.addWidget(self.__btnMusic)
-        # self.__vbox.addWidget(self.__btnVideos)
-        #
-        # self.setLayout(self.__vbox)
+        self.__dialogs_label = QLabel()
+        self.__dialogs_label.setFont(QFont('Calibri', 14))
+        self.__dialogs_label.setText('Dialogs')
+        self.__dialogs_label.setStyleSheet('color: white')
+
+        self.__messages_label = QLabel()
+        self.__messages_label.setFont(QFont('Calibri', 14))
+        self.__messages_label.setText('Messages')
+        self.__messages_label.setStyleSheet('color: white')
+
+        self.__btn_refresh = Button("Refresh")
+        self.__btn_refresh.mouseClick.connect(self.getDialogs)
+
+        self.__dialog_list_widget = QListWidget()
+        self.__dialog_list_widget.setStyleSheet("* { background-color: white; }")
+        self.__dialog_list_widget.verticalScrollBar().setStyleSheet("QScrollBar::handle:vertical {" +
+                                                                    "background: rgb(210,210,255); }" +
+                                                                    "QScrollBar:vertical { background: white; }")
+
+        self.__dialog_list_widget.setFixedWidth(300)
+        self.__dialog_list_widget.itemPressed.connect(self.dialogPressed)
+
+        self.__messages_list_widget = QListWidget()
+        self.__messages_list_widget.setStyleSheet("background-color: white;")
+        self.__messages_list_widget.verticalScrollBar().setStyleSheet("QScrollBar::handle:vertical {" +
+                                                                    "background: rgb(210,210,255); }" +
+                                                                    "QScrollBar:vertical { background: white; }")
+        self.__messages_list_widget.horizontalScrollBar().setStyleSheet("QScrollBar::handle:horizontal {" +
+                                                                        "background: rgb(210,210,255); }" +
+                                                                    "QScrollBar:horizontal { background: white; }")
+
+
+        self.__send_message_btn = Button("Send")
+        self.__send_message_btn.setFixedSize(80,50)
+        self.__send_message_btn.mouseClick.connect(self.sendMessage)
+
+        self.__edit_new_message = EditMessage()
+        self.__edit_new_message.enterPressed.connect(self.sendMessage)
+
+        self.__hbox1 = QHBoxLayout()
+        self.__hbox1.addWidget(self.__edit_new_message)
+        self.__hbox1.addWidget(self.__send_message_btn)
+
+        self.__vbox1 = QVBoxLayout()
+        self.__vbox1.setSpacing(5)
+        self.__vbox1.addWidget(self.__dialogs_label)
+        self.__vbox1.addWidget(self.__dialog_list_widget)
+        self.__vbox1.addWidget(self.__btn_refresh)
+
+        self.__vbox2 = QVBoxLayout()
+        self.__vbox2.setAlignment(Qt.AlignBottom)
+        self.__vbox2.setSpacing(5)
+        self.__vbox2.addWidget(self.__messages_label)
+        self.__vbox2.addWidget(self.__messages_list_widget)
+        self.__vbox2.addItem(self.__hbox1)
+
+        self.__hbox = QHBoxLayout()
+        self.__hbox.addItem(self.__vbox1)
+        self.__hbox.addItem(self.__vbox2)
+
+        self.setLayout(self.__hbox)
+        self.hide()
 
     def loginSuccess(self):
+        self.getDialogs()
         self.show()
-        #self.__vkapi.getMessagesList()
-        self.__vkapi.getMessagesHistory()
+
+    def dialogPressed(self):
+        if self.__old_dlg is not None:
+            self.__old_dlg.setStyleFree()
+        self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).setStylePressed()
+        self.__old_dlg = self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem())
+        self.__messages_list_widget.clear()
+        try:
+            self.getMessagesFromDialog()
+        except:
+            sleep(1.5)
+            self.getMessagesFromDialog()
+        self.__messages_list_widget.scrollToBottom()
+
+    def getDialogs(self):
+        self.__dialog_list_widget.clear()
+        self.__messages_list_widget.clear()
+        self.__old_dlg = None
+        for i in self.__vkapi.getDialogsList():
+            shortLabel = MessageLabel(i.getShortText(), False, i.getPeerId())
+            item = QListWidgetItem()
+            item.setSizeHint(QSize(20, 60))
+            self.__dialog_list_widget.addItem(item)
+            self.__dialog_list_widget.setItemWidget(item, shortLabel)
+
+    def getMessagesFromDialog(self):
+        idx = self.__dialog_list_widget.itemWidget(self.__dialog_list_widget.currentItem()).peer_id
+        for i in self.__vkapi.getMessagesList(idx):
+            fullLabel = MessageLabel(i.getFullText(), True, i.peer_id)
+            item = QListWidgetItem()
+            self.__messages_list_widget.addItem(item)
+            item.setSizeHint(fullLabel.sizeHint())
+            self.__messages_list_widget.setItemWidget(item, fullLabel)
+
+    def sendMessage(self):
+        try:
+            self.__vkapi.sendMessage(self.__dialog_list_widget.itemWidget(
+                self.__dialog_list_widget.currentItem()).peer_id, self.__edit_new_message.toPlainText())
+            self.__edit_new_message.clear()
+            self.getMessagesFromDialog()
+            self.__messages_list_widget.scrollToBottom()
+        finally:
+            pass
